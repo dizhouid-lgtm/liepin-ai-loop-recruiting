@@ -45,5 +45,6 @@ if (cmd === 'seen') {
   for (const s of STATUSES) console.log(`${s}: ${c[s] || 0}`);
   const fine = (c['精筛不合适'] || 0) + (c['待定'] || 0) + (c['入选'] || 0);
   console.log(`未精筛:精筛 = ${(c['未精筛'] || 0)}:${fine}${fine ? ' (≈' + ((c['未精筛'] || 0) / fine).toFixed(1) + ':1)' : ''}`);
+  if (c['待定']) console.log(`⚠ 待定 ${c['待定']} 条挂账 → 先交付复核/催拍板清算(步骤4-5),再开新搜`);
 
 } else { console.error('未知命令: ' + cmd); process.exit(2); }

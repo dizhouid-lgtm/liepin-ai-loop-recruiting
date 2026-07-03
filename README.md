@@ -42,10 +42,9 @@
 > ```
 > `npm update @viyzhu/liepin-cli` 会覆盖补丁,更新后重跑一次即可(幂等)。
 
-装完自检(不需登录)——能打印计数、能占锁又释放即就绪:
+装完自检(不需登录)——doctor 全绿即就绪(它会查 cli/补丁/锁/残留浏览器):
 ```bash
-node .claude/skills/pxb-liepin/scripts/dedup.mjs stats _共享/模板/去重台账模板.csv
-node .claude/skills/pxb-liepin/scripts/lock.mjs acquire 自检 && node .claude/skills/pxb-liepin/scripts/lock.mjs release
+node .claude/skills/pxb-liepin/scripts/doctor.mjs
 ```
 
 ## 安装与接入（按你的 AI 工具二选一）
@@ -106,7 +105,8 @@ liepin-ai-loop-recruiting/
 | `liepin: command not found` | 前置第 3 步没装好;`npm i -g @viyzhu/liepin-cli`，确认 `npm bin -g` 在 PATH |
 | 脚本报"定位 @viyzhu/liepin-cli 失败" | 同上;`pdf.mjs` 靠 `npm root -g` 找包 |
 | 搜索/拉简历非零退出 | 多半反爬或被踢:停手、别连刷、重登 `liepin login`，降低频率 |
-| 出 PDF 存成登录页 | 账号被踢，重登后再出 |
+| 出 PDF 存成登录页 | 账号被踢。`pdf.mjs` 会检测登录页、中止整批并非零退出;重登后用它打印的命令续跑剩余 |
 | 搜人/精筛时弹有头浏览器 | AI 绕过脚本裸调了 `liepin`，或没先登录。让它只用 `scripts/*.mjs`;并跑一次 `patch-headless.mjs` 当安全网 |
-| 粗筛卡很久 / 长时间无响应 | liepin 卡死(反爬/滑块/未登录/Chrome 卡住)。脚本已内置硬超时(search 6min、resume 2.5min)会自动中断报错;若反复超时:**关掉残留 Chrome 进程、确认已登录、过几分钟换时段**,别连刷。`--limit` 仅排查时临时调小,排查完放回 40(漏斗要宽才挑得出人) |
+| 粗筛卡很久 / 长时间无响应 | liepin 卡死(反爬/滑块/未登录/Chrome 卡住)。脚本已内置硬超时(search 6min、resume 2.5min),超时会自动中断报错**并清掉残留浏览器进程**;若反复超时:**确认已登录、过几分钟换时段**,别连刷(残留进程也可 `doctor.mjs --kill` 手动清)。`--limit` 仅排查时临时调小,排查完放回 40(漏斗要宽才挑得出人) |
+| 精筛看不到逐段职责(duty) | `npm update` 覆盖了 duty 补丁。`doctor.mjs` 会查出来,`fetch.mjs` 也会告警;重跑 `patch-resume.mjs` 即可 |
 | 多对话/多岗同时搜 | 不支持并发:单账号单锁，靠 `_共享/搜索队列.md` 排队 |

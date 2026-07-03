@@ -11,6 +11,7 @@ if (!csv || !query) { console.error('用法: node search.mjs <csv> "<关键词>"
 let raw;
 try { raw = liepinJson(['search', JSON.stringify(query), ...flags], { open: '[', timeoutMs: 360000 }); }  // 6min:自动翻页给宽
 catch (e) { console.error('搜索失败,停手；看报错:\n' + e.message); process.exit(1); }
+if (!Array.isArray(raw)) { console.error('搜索返回的不是列表(可能被踢/接口变了),停手:\n' + JSON.stringify(raw).slice(0, 300)); process.exit(1); }
 
 const rows = readLedger(csv);
 const seen = new Set(rows.map(r => r.resume_id));
@@ -26,4 +27,12 @@ console.log('id\t姓名\t现职\t年龄\t公司\t年限\t期望薪资\t学历\t�
 for (const x of fresh) {
   console.log([x.resume_id, x.name, x.current_title, x.age, x.company, x.experience, x.salary, x.degree, x.title]
     .map(v => v ?? '').join('\t'));
+}
+
+// 下一步提示:每轮把三桶纪律重新打进上下文,防长循环漂移
+if (!fresh.length) {
+  console.log(`→ 本页无新人(全在台账里):换关键词,或挖库存 node .claude/skills/pxb-liepin/scripts/dedup.mjs list "${csv}" 未精筛`);
+} else {
+  console.log(`→ 下一步(三桶,别漏):卡面即否 → node .claude/skills/pxb-liepin/scripts/dedup.mjs set "${csv}" 粗筛不合适 <id...>`);
+  console.log('  ~10 个最对口 → node .claude/skills/pxb-liepin/scripts/fetch.mjs <id...>;其余不动,留「未精筛」当库存');
 }

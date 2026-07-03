@@ -57,6 +57,8 @@ liepin talent
 liepin greet <user_id> --ejobId <职位ID>
 ```
 
+> ⚠️ 本工作区红线:招聘流程**不用 greet**(打招呼/沟通归 HR)——见 `pxb-liepin` skill。此处仅作命令参考。
+
 ### 聊天管理
 ```bash
 # 查看聊天列表
@@ -101,7 +103,7 @@ export CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 
 ## 项目位置
 
-源代码：`/tmp/liepin-cli/`
+全局 npm 包 `@viyzhu/liepin-cli`(安装位置见 `npm root -g`;本工作区两个补丁 `patch-headless.mjs`/`patch-resume.mjs` 就打在它的 `dist/` 上)
 
 ## 相关命令
 
