@@ -1,119 +1,28 @@
 ---
 name: liepin-cli
 description: >-
-  猎聘自动化 CLI 工具。当用户提到猎聘、liepin、招聘自动化、候选人管理、
-  人才搜索、自动打招呼等功能时，使用此 skill。
+  猎聘 CLI(@viyzhu/liepin-cli)的安装位置、登录与故障参考。仅当需要登录猎聘、
+  排查 CLI 环境问题、或查命令参数时使用;搜人/筛人的作业流程一律走 pxb-liepin skill。
 ---
 
 # 猎聘 CLI (`liepin-cli`)
 
-## 功能概述
+全局 npm 包 `@viyzhu/liepin-cli`,保持最新(版本下限由 `pxb-liepin` 的 `doctor.mjs` 把关;安装位置见 `npm root -g`,本工作区可选补丁 `patch-headless.mjs` 就打在它的 `dist/` 上)。
 
-liepin-cli 是猎聘招聘者端（lpt.liepin.com）自动化命令行工具，支持：
-- 人才搜索和筛选
-- 简历详情查看
-- 候选人管理（推荐 / 人才库）
-- 聊天列表与聊天记录
-- 职位列表浏览
-
-## 环境要求
-
-- Node.js ≥ 20
-- Chrome/Edge 浏览器
-- Windows / macOS / Linux 常见 Chrome/Edge 安装路径会自动检测；找不到浏览器时再设置 `CHROME_PATH`
-
-## 常用命令
-
-### 登录
+## 红线
+本工作区**只通过 `pxb-liepin` 的 `scripts/*.mjs` 调用 CLI**,唯一允许手跑的命令是登录:
 ```bash
-# 首次使用需要登录
-liepin login
+LIEPIN_HEADLESS=false liepin login    # PowerShell: $env:LIEPIN_HEADLESS='false'; liepin login
 ```
+打开登录页让用户扫码;其余命令(search/resume/greet/...)一律不裸敲——发布版默认有头会弹窗,且 greet(打招呼)是流程禁区(沟通归 HR)。
 
-### 搜索人才
+## 查命令参数
 ```bash
-# 基础搜索
-liepin search 前端工程师
-
-# 带筛选条件
-liepin search 前端工程师 --city 北京 --experience 3-5年 --salary 20-30K
+liepin help              # 全部命令
+liepin search --help     # 某命令的参数与码表(如 --user-status/--age)
 ```
+不在此维护参数表——以 CLI 自带帮助为准,永不过时。
 
-### 查看简历
-```bash
-# 简历详情（简历ID = search 结果里的 resume_id）
-liepin resume <简历ID>
-```
-
-### 候选人管理
-```bash
-# 查看推荐候选人
-liepin recommend
-
-# 查看人才库
-liepin talent
-
-# 向候选人打招呼（一键沟通，使用职位预设招呼语；user_id 取 search/recommend 返回值）
-liepin greet <user_id> --ejobId <职位ID>
-```
-
-> ⚠️ 本工作区红线:招聘流程**不用 greet**(打招呼/沟通归 HR)——见 `pxb-liepin` skill。此处仅作命令参考。
-
-### 聊天管理
-```bash
-# 查看聊天列表
-liepin chatlist
-
-# 查看与某候选人的聊天记录（对方imId = chatlist 结果里的 im_id）
-liepin chatmsg <对方imId>
-```
-
-## 命令参数
-
-| 命令 | 参数 | 说明 |
-|------|------|------|
-| `search` | `query` | 人才搜索关键词（必需） |
-| | `--city` | 城市（如：北京、上海） |
-| | `--experience` | 工作经验（如：3-5年） |
-| | `--salary` | 薪资范围（如：20-30K） |
-| | `--degree` | 学历（如：本科） |
-| | `--page` | 页码 |
-| | `--limit` | 返回条数 |
-| `chatmsg` | `oppositeImId` | 对方 imId（chatlist 的 im_id，必需） |
-| `resume` | `talentId` | 简历 ID（search 的 resume_id，必需） |
-| `greet` | `usercId` | 候选人 user_id（search/recommend 返回的 user_id，必需） |
-| | `--ejobId` | 关联职位 ID（建议传，用于权限校验与归属） |
-
-## 故障排除
-
-### Chrome 未找到（自动检测失败时）
-```bash
-export CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-```
-
-### 登录失败
-1. 确保 Chrome 已安装
-2. 检查网络连接
-3. 尝试手动登录后再使用 CLI
-
-### 被检测为自动化
-- 增加操作间隔
-- 使用代理
-- 减少操作频率
-
-## 项目位置
-
-全局 npm 包 `@viyzhu/liepin-cli`(安装位置见 `npm root -g`;本工作区两个补丁 `patch-headless.mjs`/`patch-resume.mjs` 就打在它的 `dist/` 上)
-
-## 相关命令
-
-- `liepin help` - 显示帮助信息
-- `liepin login` - 登录猎聘账号
-- `liepin search` - 搜索人才
-- `liepin resume` - 查看简历详情
-- `liepin chatlist` - 查看聊天列表
-- `liepin chatmsg` - 查看与某候选人的聊天记录
-- `liepin recommend` - 查看推荐候选人
-- `liepin talent` - 查看人才库
-- `liepin joblist` - 查看职位列表
-- `liepin greet` - 向候选人打招呼（一键沟通，使用职位预设招呼语）
+## 环境与故障
+Node ≥ 20 + Chrome/Edge(常见安装路径自动检测,找不到设 `CHROME_PATH`)。
+故障处置见仓库根 `README.md` 的「故障速查」表。

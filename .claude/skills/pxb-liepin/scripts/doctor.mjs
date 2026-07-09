@@ -22,10 +22,26 @@ try {
   const p = path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), '@viyzhu', 'liepin-cli', 'dist');
   if (existsSync(p)) dist = p;
 } catch {}
+let cliVer = '';
 if (dist) {
-  let v = ''; try { v = ' v' + JSON.parse(readFileSync(path.join(dist, '..', 'package.json'), 'utf8')).version; } catch {}
-  ok('liepin-cli 已装' + v);
+  try { cliVer = JSON.parse(readFileSync(path.join(dist, '..', 'package.json'), 'utf8')).version; } catch {}
+  ok('liepin-cli 已装' + (cliVer ? ' v' + cliVer : ''));
 } else fail('liepin-cli 未装', 'npm i -g @viyzhu/liepin-cli');
+
+// 2.3 版本下限(0.1.6 起原生带逐段 duty + --user-status/--age 服务端过滤,整个流程按此假设写;本地比对,离线也拦)
+const MIN = '0.1.6';
+const older = (a, b) => { const x = a.split('.').map(Number), y = b.split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); return false; };
+if (dist && cliVer && older(cliVer, MIN))
+  fail(`liepin-cli v${cliVer} < ${MIN}:精筛缺逐段 duty、求职状态/年龄过滤失效`, 'npm i -g @viyzhu/liepin-cli');
+
+// 2.5 liepin-cli 是否最新(查 npm 源;离线/超时不拦路,查到落后才提示)
+if (dist && cliVer) {
+  const r = spawnSync('npm', ['view', '@viyzhu/liepin-cli', 'version'], { shell: true, encoding: 'utf8', timeout: 10000 });
+  const latest = ((r.status === 0 && r.stdout) || '').trim();
+  if (!latest) warn('查不到 npm 源上的最新版(离线/超时?),本次跳过版本比对');
+  else if (latest === cliVer) ok('liepin-cli 已是最新版');
+  else warn(`liepin-cli v${cliVer} 落后最新版 v${latest}——先问用户再更新: npm i -g @viyzhu/liepin-cli,更新后再跑一次 doctor(无头安全网补丁会被覆盖,按提示重打)`);
+}
 
 // 3. liepin 命令可用(PATH)
 if (dist) {
@@ -39,14 +55,6 @@ if (dist) {
   existsSync(cfg) && readFileSync(cfg, 'utf8').includes("LIEPIN_HEADLESS !== 'false'")
     ? ok('无头补丁已打')
     : warn('无头补丁未打(裸调 liepin 会弹窗)——可跑 node .claude/skills/pxb-liepin/scripts/patch-headless.mjs');
-}
-
-// 5. duty 补丁(必需:精筛主料,npm update 会覆盖)
-if (dist) {
-  const rj = path.join(dist, 'toolset', 'resume.js');
-  existsSync(rj) && readFileSync(rj, 'utf8').includes('w.duty')
-    ? ok('duty 补丁已打')
-    : fail('duty 补丁不在(npm update 覆盖了?),精筛会缺逐段职责', 'node .claude/skills/pxb-liepin/scripts/patch-resume.mjs');
 }
 
 // 6. 搜索锁

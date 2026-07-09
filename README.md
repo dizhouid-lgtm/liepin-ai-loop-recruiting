@@ -30,19 +30,13 @@
 |---|--------|---------------|
 | 1 | **Node.js ≥ 20** | 官网装 LTS。验证 `node -v` |
 | 2 | **Chrome 或 Edge** | 常规安装即可(CLI 用它驱动猎聘)。默认位置会自动检测；找不到再设环境变量 `CHROME_PATH` 指向浏览器可执行文件 |
-| 3 | **猎聘 CLI** | `npm i -g @viyzhu/liepin-cli`。验证 `liepin help` |
+| 3 | **猎聘 CLI(装最新)** | `npm i -g @viyzhu/liepin-cli`。验证 `liepin help`(版本过老 doctor 会查出来,重跑安装命令即升级) |
 | 4 | **猎聘招聘者账号** | 需**你自己的猎聘 R 端账号**(能登录 lpt.liepin.com)。**登录这步不用自己敲命令**——首次搜人时 AI 会帮你打开登录页、你扫码即可(见下文流程)。账号本身得你先有 |
 
 > ⚠️ 环境层只需"装好 + 有账号"。**真正的登录、填 JD 都在你跟 AI 的对话里完成,不碰命令行**:你只管说要招什么岗、扫个码,其余 AI 引导。
 > mac/Linux 把反斜杠换正斜杠;设环境变量用 `KEY=值 命令` 或 `export KEY=值`。脚本本身跨平台。
 
-> **(可选但推荐)无头安全网**:本工作区的脚本已强制无头,正常不会弹浏览器。但若 AI 偶尔绕过脚本裸敲 `liepin`,npm 发布版默认会弹有头窗口。跑一次下面的补丁,把发布版默认也改成无头(login 仍可有头扫码),从根上免疫:
-> ```bash
-> node .claude/skills/pxb-liepin/scripts/patch-headless.mjs
-> ```
-> `npm update @viyzhu/liepin-cli` 会覆盖补丁,更新后重跑一次即可(幂等)。
-
-装完自检(不需登录)——doctor 全绿即就绪(它会查 cli/补丁/锁/残留浏览器):
+装完自检(不需登录)——doctor 全绿即就绪(它会查 cli 版本/无头补丁/锁/残留浏览器):
 ```bash
 node .claude/skills/pxb-liepin/scripts/doctor.mjs
 ```
@@ -69,7 +63,7 @@ node .claude/skills/pxb-liepin/scripts/doctor.mjs
 
 > 想自己先建好岗位文件夹也行:复制 `_共享/模板/` 三件到新文件夹(改名),建空 `待定/`,照 `JD模板.md` 填(公司素材见 `CLAUDE.md`)。
 
-> 🔄 **本工作区还在持续迭代**,每次用之前先 `git pull` 拉最新(AI 也会在开工前自动检查更新)。你的岗位数据是本地未跟踪文件,`git pull` 不会动。
+> 🔄 **本工作区还在持续迭代**,每次用之前先 `git pull` 拉最新(AI 也会在开工前自动检查更新,并顺带比对猎聘 CLI 是否落后 npm 最新版——落后会先问你再更新)。你的岗位数据是本地未跟踪文件,`git pull` 不会动。
 
 ## 文件结构
 ```
@@ -108,5 +102,5 @@ liepin-ai-loop-recruiting/
 | 出 PDF 存成登录页 | 账号被踢。`pdf.mjs` 会检测登录页、中止整批并非零退出;重登后用它打印的命令续跑剩余 |
 | 搜人/精筛时弹有头浏览器 | AI 绕过脚本裸调了 `liepin`，或没先登录。让它只用 `scripts/*.mjs`;并跑一次 `patch-headless.mjs` 当安全网 |
 | 粗筛卡很久 / 长时间无响应 | liepin 卡死(反爬/滑块/未登录/Chrome 卡住)。脚本已内置硬超时(search 6min、resume 2.5min),超时会自动中断报错**并清掉残留浏览器进程**;若反复超时:**确认已登录、过几分钟换时段**,别连刷(残留进程也可 `doctor.mjs --kill` 手动清)。`--limit` 仅排查时临时调小,排查完放回 40(漏斗要宽才挑得出人) |
-| 精筛看不到逐段职责(duty) | `npm update` 覆盖了 duty 补丁。`doctor.mjs` 会查出来,`fetch.mjs` 也会告警;重跑 `patch-resume.mjs` 即可 |
+| 精筛看不到逐段职责(duty) | liepin-cli 版本过老,`doctor.mjs` 会拦;`npm i -g @viyzhu/liepin-cli` 升到最新即可 |
 | 多对话/多岗同时搜 | 不支持并发:单账号单锁，靠 `_共享/搜索队列.md` 排队 |
