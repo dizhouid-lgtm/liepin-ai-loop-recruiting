@@ -1,10 +1,10 @@
 // 环境体检——开工第一步:cli/补丁/锁/残留浏览器一次查清;✗ 未过先修再开搜。
-// 用法: node doctor.mjs [--kill]   --kill = 顺带杀掉残留的 liepin 浏览器进程
+// 用法: node doctor.mjs [--kill]   --kill = 顺带关掉端口上的无头实例、杀掉残留的 liepin 浏览器进程
 // 登录态不在此查(要碰账号):由第一轮 search 当探针(见 SKILL 步骤 0.5)。
 import path from 'path';
 import { existsSync, readFileSync, statSync, copyFileSync } from 'fs';
 import { execSync, spawnSync } from 'child_process';
-import { LOCK_FILE, listOrphanChrome, killOrphanChrome } from './_liepin.mjs';
+import { LOCK_FILE, listOrphanChrome, killOrphanChrome, probeCdpPort } from './_liepin.mjs';
 
 const kill = process.argv.includes('--kill');
 let bad = 0;
@@ -49,7 +49,12 @@ if (dist) {
   r.status === 0 ? ok('liepin 命令可用') : fail('liepin 命令跑不动(不在 PATH?)', '确认 npm 全局 bin 在 PATH,重开终端再试');
 }
 
-// 4. 有头/无头:search/fetch 默认有头(无头 UA 会被猎聘风控),仅 pdf.mjs 无头。无头补丁已废弃,勿打。
+// 4. 有头/无头:search/fetch 强制有头(无头 UA 会被猎聘风控),仅 pdf.mjs 无头。无头补丁已废弃,勿打。
+//    环境里残留的 LIEPIN_HEADLESS/RECRUIT_BROWSER_HIDDEN=true 脚本已覆盖,但裸敲 liepin 会照它无头 → 提示删掉。
+for (const k of ['LIEPIN_HEADLESS', 'RECRUIT_BROWSER_HIDDEN'])
+  if (/^(true|1|yes|y)$/i.test((process.env[k] || '').trim()))
+    warn(`环境变量 ${k}=${process.env[k]}(多半是用户级残留):脚本已强制有头,但裸敲 liepin 会无头 → 建议删掉该变量` +
+      (process.platform === 'win32' ? `(PowerShell: [Environment]::SetEnvironmentVariable('${k}',$null,'User'),重开终端)` : ''));
 
 // 5. 搜索队列(未跟踪的运行状态,新克隆/拉取后没有 → 从模板生成)
 const QUEUE = path.join('_共享', '搜索队列.md');
@@ -67,7 +72,18 @@ else {
            : warn(`有过期锁(「${holder}」,${age.toFixed(0)} 分钟)——acquire 会自动夺,无需手动清`);
 }
 
-// 7. 残留 liepin 浏览器(占死 profile,后续每条命令都会卡住)
+// 7. CDP 端口上的无头实例(CLI 端口上有实例就复用、不看 LIEPIN_HEADLESS → 有头 search 会接手无头 UA 被风控)
+//    先于第 8 项:--kill 走 CLI 优雅关闭(登录态留在 profile),关不掉再由第 8 项强杀。
+if (dist) {
+  const p = probeCdpPort({ closeHeadless: kill });
+  if (p.error) warn('CDP 端口探测失败,跳过: ' + p.error.split('\n')[0]);
+  else if (p.headless === null) ok('CDP 端口上无猎聘浏览器');
+  else if (p.headless === false) ok('CDP 端口上是有头猎聘浏览器(可复用)');
+  else if (p.closed) ok('已关闭 CDP 端口上的无头猎聘浏览器');
+  else fail('CDP 端口上有无头猎聘浏览器(pdf.mjs 残留?有头命令会复用它、以 HeadlessChrome UA 触发风控)', '重跑 doctor 加 --kill');
+}
+
+// 8. 残留 liepin 浏览器(占死 profile,后续每条命令都会卡住)
 const pids = listOrphanChrome();
 if (!pids.length) ok('无残留 liepin 浏览器进程');
 else if (kill) { const done = killOrphanChrome(); ok(`已清 ${done.length}/${pids.length} 个残留浏览器进程`); }
