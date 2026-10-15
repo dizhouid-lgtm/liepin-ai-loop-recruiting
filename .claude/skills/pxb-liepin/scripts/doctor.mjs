@@ -49,13 +49,7 @@ if (dist) {
   r.status === 0 ? ok('liepin 命令可用') : fail('liepin 命令跑不动(不在 PATH?)', '确认 npm 全局 bin 在 PATH,重开终端再试');
 }
 
-// 4. 无头补丁(可选安全网:脚本已强制无头,这补丁防"裸调 liepin"弹窗)
-if (dist) {
-  const cfg = path.join(dist, 'config.js');
-  existsSync(cfg) && readFileSync(cfg, 'utf8').includes("LIEPIN_HEADLESS !== 'false'")
-    ? ok('无头补丁已打')
-    : warn('无头补丁未打(裸调 liepin 会弹窗)——可跑 node .claude/skills/pxb-liepin/scripts/patch-headless.mjs');
-}
+// 4. 有头/无头:search/fetch 默认有头(无头 UA 会被猎聘风控),仅 pdf.mjs 无头。无头补丁已废弃,勿打。
 
 // 6. 搜索锁
 if (!existsSync(LOCK_FILE)) ok('搜索锁空闲');

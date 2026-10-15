@@ -51,7 +51,8 @@ export function liepinJson(args, { open = '[', timeoutMs = 360000 } = {}) {
   const r = spawnSync('liepin', [...args, '--json'], {
     shell: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
     timeout: timeoutMs, killSignal: 'SIGKILL',
-    env: { ...process.env, LIEPIN_HEADLESS: 'true' },
+    // 默认有头:liepin-cli ≥0.2.7 实测无头 UA 带 HeadlessChrome 会被判"行为异常"。显式设了 LIEPIN_HEADLESS 的(如 pdf.mjs)照它。
+    env: { ...process.env, LIEPIN_HEADLESS: process.env.LIEPIN_HEADLESS ?? 'false' },
   });
   // 超时:Node 会置 r.error(code ETIMEDOUT)并把 r.signal 设为 killSignal。
   if (r.error && (r.error.code === 'ETIMEDOUT' || r.signal)) {

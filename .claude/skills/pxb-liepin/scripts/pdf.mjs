@@ -51,7 +51,7 @@ try {
   process.exit(1);
 }
 const pkg = 'file://' + pkgRoot.replace(/\\/g, '/');
-const { CdpBrowser } = await import(`${pkg}/browser/cdp_browser.js`);
+const { CdpBrowser, closeRemoteBrowser } = await import(`${pkg}/browser/cdp_browser.js`);
 const { sleep } = await import(`${pkg}/common/utils.js`);
 
 const base = 'https://lpt.liepin.com/cvview/showresumedetail?resIdEncode=';
@@ -137,7 +137,8 @@ try {
   }
   if (fails.length) console.log('坏页稍后单独重跑: ' + cmdFor(fails));
 } catch (e) { console.log('ERR:', e?.message || e); process.exitCode = 1; }
-finally { await b.close(); }
+// cli ≥0.2.7 无 close():整只关掉无头实例,免得下次有头 search 复用到无头浏览器
+finally { if (typeof b.close === 'function') await b.close(); else { b.disconnect?.(); await closeRemoteBrowser?.(); } }
 
 if (!process.exitCode) {
   console.log('→ 下一步:node .claude/skills/pxb-liepin/scripts/lock.mjs release <岗位>;交付只两样:每份列成可点链接 + 逐份问合适/不合适各为什么');

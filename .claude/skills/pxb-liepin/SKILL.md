@@ -30,7 +30,7 @@ description: >-
 - **决策别打断、给推荐、能不问就别问**:破例/放宽约束/停搜这类才需用户拍的,优先**带推荐先做可逆一步**(照推荐先提报、复核可撤),决策点在交付里一句话点出;真要问就**攒一处、一次问清、每条附推荐**,别过程里东一句西一句、也别没问完就干等。照 JD 能自己判的,别问。
 
 ### 全程红线
-① 单账号串行,**绝不并发**调 liepin。② 反爬宁慢勿封:脚本非零退出即停、别密集连刷(脚本内已带抖动)。③ 原始 JSON 不进上下文(脚本只输出窄表)。④ 隐私:简历只存本地、不外发、不传外部服务。⑤ 只 `search`/`resume`,**不 `greet`**(沟通归 HR)。⑥ **只走脚本**(`search`/`fetch`/`pdf`/`jd-round`,已强制无头),除用户手动 `liepin login` 外**绝不裸敲 `liepin`**(裸调发布版默认有头会弹窗)。全程**不该弹任何浏览器窗口**;弹了 = 有人裸调或没登录 → **停手排查、别继续刷**(可选安全网:装完跑一次 `patch-headless.mjs`)。
+① 单账号串行,**绝不并发**调 liepin。② 反爬宁慢勿封:脚本非零退出即停、别密集连刷(脚本内已带抖动)。③ 原始 JSON 不进上下文(脚本只输出窄表)。④ 隐私:简历只存本地、不外发、不传外部服务。⑤ 只 `search`/`resume`,**不 `greet`**(沟通归 HR)。⑥ **只走脚本**(`search`/`fetch`/`pdf`/`jd-round`),除用户手动 `liepin login` 外**绝不裸敲 `liepin`**。`search`/`fetch` **默认有头**(会弹 Chrome 窗口、正常现象;无头 UA 带 HeadlessChrome 会被猎聘判"行为异常"),只有 `pdf` 无头(`page.pdf` 仅无头可用)。开搜前提醒用户:窗口别关、别在里面操作。**不要打 `patch-headless.mjs`**(已废弃,会把默认翻回无头)。
 
 > 脚本无参运行会打印用法;任一脚本退出码 ≠ 0 = 停手,按报错处置(多半反爬/被踢/未登录)。
 
@@ -58,7 +58,7 @@ description: >-
 node .claude/skills/pxb-liepin/scripts/doctor.mjs                            # 环境预检;有 ✗ 先修再开工(--kill 清残留浏览器)
 node .claude/skills/pxb-liepin/scripts/dedup.mjs stats "<岗位>\去重台账.csv"   # 看现场
 ```
-- **doctor 报 liepin-cli 落后最新版** → 一句话告知用户并推荐更新,**用户点头才动**:`npm i -g @viyzhu/liepin-cli` → 再跑一次 doctor 全绿才开工(无头安全网补丁会被覆盖,按 doctor 提示重打)。用户说先不更 → 记一句照旧开工。
+- **doctor 报 liepin-cli 落后最新版** → 一句话告知用户并推荐更新,**用户点头才动**:`npm i -g @viyzhu/liepin-cli` → 再跑一次 doctor 全绿才开工。用户说先不更 → 记一句照旧开工。
 - **`待定` > 0 = 上批还挂着**:先清算(交付复核/催用户拍板,走步骤 4-5),清完再开新搜。
 - 队列里挂着孤儿 `进行中`(没有会话在跑它)→ 复位成 `待办`。
 
@@ -73,7 +73,7 @@ node .claude/skills/pxb-liepin/scripts/lock.mjs release <岗位>   # 步骤4 出
 - 多岗同招各自在队列排队;靠"批次边界释放锁"自然交错。
 
 ## 0.5 登录:自己探,别问用户登没登
-**直接拿第一轮 search 当探针**:`search.mjs` 强制无头、不弹窗,跑得通=已登录,连着往下跑;只有脚本报未登录才登录。
+**直接拿第一轮 search 当探针**:`search.mjs` 跑得通=已登录,连着往下跑;只有脚本报未登录才登录。
 - 脚本报未登录/被踢 → 运行(唯一允许有头的命令),让用户扫码:
   ```bash
   LIEPIN_HEADLESS=false liepin login    # PowerShell: $env:LIEPIN_HEADLESS='false'; liepin login
@@ -198,13 +198,13 @@ node .claude/skills/pxb-liepin/scripts/jd-round.mjs "<岗位>\JD.md" "R_（日�
 | 脚本 | 用法 | 干什么 |
 |---|---|---|
 | `init-role.mjs` | `"<岗位>"` | 新岗一键建档:复制模板三件 + 建 `待定/`、`参考简历/`;幂等只补缺 |
-| `doctor.mjs` | `[--kill]` | 开工体检:cli 版本(下限+是否最新)/无头补丁/锁/残留浏览器;`--kill` 顺带清残留 |
+| `doctor.mjs` | `[--kill]` | 开工体检:cli 版本(下限+是否最新)/锁/残留浏览器;`--kill` 顺带清残留 |
 | `lock.mjs` | `acquire\|renew\|release <岗位>` | 单账号搜索锁,30 分钟过期;校验岗位归属,liepin 成功调用自动续;acquire/renew 打印本轮纪律 |
 | `search.mjs` | `<csv> "<词>" [--city --limit --experience --salary --degree --age --user-status]` | 搜(JD 硬约束全传参;默认服务端排除"在职,暂无跳槽打算")+去重+登记 `未精筛`+打窄表,结尾提示三桶下一步 |
 | `fetch.mjs` | `<id...>` | 批量拉简历窄字段(含逐段 `duty`),内置抖动;单份打不开跳过列出,账号级问题才整批停 |
 | `dedup.mjs` | `seen\|add\|set\|list\|stats <csv> [状态] [id...]` | 台账查重/改状态(5 值)/按状态列 id(回扫)/比例自查;`待定` 挂账会提醒 |
 | `jd-round.mjs` | `<JD.md> "<轮次>" "<强>" "<弱>" "<正>" "<负>"` | 往内部备注表**只追加一行**(紧贴上行、转义,免手编甩出表格) |
 | `pdf.mjs` | `--dir <目录> <id=标签...>` | 整页存 PDF;登录页/坏 PDF 非零退出并打印续跑命令 |
-| `patch-headless.mjs` | (装完跑一次,可选) | 发布版默认改无头,免疫裸调用弹窗;幂等,`npm update` 后重跑 |
+| `patch-headless.mjs` | **已废弃,勿跑** | 旧版用来把默认翻成无头;新版 CLI 下无头会触发风控 |
 
 > liepin 命令细节见同目录 `liepin-cli` skill。环境/安装见仓库根 `README.md`。
