@@ -2,8 +2,9 @@
 // 用法: node pdf.mjs [--dir 输出目录] <resume_id> [resume_id=标签] ...
 //   - 纯 id：文件名 简历_<id>.pdf ｜ id=标签：文件名 简历_<标签>.pdf(标签如 "张三-大疆",方便辨认)
 // 输出目录:① --dir(推荐,跨 shell 一致,精筛用各岗「待定」文件夹);② 环境变量 LIEPIN_PDF_DIR;③ 都没设则存桌面。不存在自动建。
-// 退出码:任一份登录页/坏 PDF/异常 → 非零并打印续跑命令,别把 FAIL 的交付;全部成功才 0。
-// 注意:① page.pdf() 仅无头可用,别设 LIEPIN_HEADLESS=false;② 占用 liepin profile,别和搜索/看简历 Chrome 同时跑;③ 需账号在线(检测到登录页会中止整批)。
+// 退出码:任一份登录页/风控验证页/没等到简历内容/坏 PDF/异常 → 非零并打印续跑命令,别把 FAIL 的交付;全部成功才 0。
+// 注意:① page.pdf() 仅无头可用,别设 LIEPIN_HEADLESS=false;② 占用 liepin profile,别和搜索/看简历 Chrome 同时跑;
+//      ③ 需账号在线且未被风控(检测到登录页/"账号行为异常"验证页会中止整批;验证页渲染出来 ~174KB,过得了大小阈值,只能靠识别)。
 // 渲染:简历页(cvview→resume/detail 重定向 + React/Vue 异步渲染)不能用固定 sleep 就截,
 //      必须等到真实简历内容出现再 pdf,否则截到中间态/错误页(表现为所有 PDF 都 ~68KB 一致)。
 //      另:截前要点开所有"展开",否则个人介绍/工作描述等折叠内容会被截断(见 expandAll)。
@@ -57,6 +58,9 @@ const { sleep } = await import(`${pkg}/common/utils.js`);
 const base = 'https://lpt.liepin.com/cvview/showresumedetail?resIdEncode=';
 const SMALL_PDF = 150 * 1024; // <150KB 大概率是没渲染完/错误页(正常单页简历 ~300KB)
 const MARKERS = ['求职意向', '工作经历', '教育经历', '自我评价'];
+// 风控验证页:标题"账号行为异常"+"点击验证"按钮,可能 302 到 safe.liepin.com/.../captchaPage_PC
+const CAPTCHA_TEXT = /账号行为异常|点击验证|安全验证/;
+const isCaptchaUrl = u => /safe\.liepin\.com|captchaPage/i.test(u || '');
 
 // 容错读 innerText:cvview→resume/detail 重定向会销毁 execution context,
 // page.evaluate 此刻会抛"context destroyed"。不能用 waitForFunction(它把这种异常当失败直接退出),
@@ -64,9 +68,11 @@ const MARKERS = ['求职意向', '工作经历', '教育经历', '自我评价']
 async function pollResumeReady(page, id, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    if (isCaptchaUrl(page.url())) return 'captcha';
     let txt = '';
     try { txt = await page.evaluate(() => document.body.innerText || ''); }
     catch { await sleep(500); continue; } // 重定向中 context 被销毁,稍后再试
+    if (CAPTCHA_TEXT.test(txt.slice(0, 300))) return 'captcha';
     if (/登录|登陆|扫码/.test(txt.slice(0, 120))) return 'login';
     if (MARKERS.some(m => txt.includes(m))) return 'ok';
     await sleep(500);
@@ -93,8 +99,8 @@ async function expandAll(page) {
 async function renderOne(page, id, out, attempt = 1) {
   await page.goto(base + id, { waitUntil: 'networkidle2' }).catch(() => {});
   const state = await pollResumeReady(page, id);
-  if (state === 'login') return 'login';   // 账号被踢:交调用方中止整批
-  if (state === 'timeout') console.log(`⚠️ ${id} 15s 内没等到简历内容,仍尝试截 PDF`);
+  if (state === 'login' || state === 'captcha') return state; // 账号被踢/被风控:交调用方中止整批
+  if (state === 'timeout') return 'timeout'; // 没等到简历标记就不截:截出来必是坏页(验证页/错误页/中间态)
   await expandAll(page); // 点开"展开",否则个人介绍等折叠内容会被截断
   await sleep(2500); // 内容出现后再 settle,等图片/布局稳定(debug 实测固定等待是关键)
   await page.emulateMediaType('screen');
@@ -120,13 +126,23 @@ try {
     const { id, label } = items[i];
     const out = path.join(outDir, `简历_${label}.pdf`);
     const size = await renderOne(page, id, out);
+    if (size === 'captcha') {
+      process.exitCode = 1;
+      console.log(`❌ ${id} 打开的是"账号行为异常"验证页——账号被风控,中止整批(未存 PDF)。`);
+      console.log('先 `liepin login` 在窗口里完成图形验证,再续跑剩余: ' + cmdFor(items.slice(i)));
+      break;
+    }
     if (size === 'login') {
       process.exitCode = 1;
       console.log(`❌ ${id} 打开的是登录页——账号被踢,中止整批(后面只会全是登录页)。`);
       console.log('先 `liepin login` 重登,再续跑剩余: ' + cmdFor(items.slice(i)));
       break;
     }
-    if (size < SMALL_PDF) {
+    if (size === 'timeout') {
+      process.exitCode = 1;
+      fails.push(items[i]);
+      console.log(`❌ ${id} 15s 内没等到简历内容(${MARKERS.join('/')})——FAIL,未存 PDF`);
+    } else if (size < SMALL_PDF) {
       process.exitCode = 1;
       fails.push(items[i]);
       console.log(`❌ ${out} 仅 ${Math.round(size / 1024)}KB,重试 3 次仍疑似坏页(没渲染完/错误页)——FAIL,这份别交付`);

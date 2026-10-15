@@ -132,7 +132,8 @@ node .claude/skills/pxb-liepin/scripts/dedup.mjs set "<岗位>\去重台账.csv"
 node .claude/skills/pxb-liepin/scripts/pdf.mjs --dir "<岗位>\待定" "<id1>=张三-大疆" "<id2>=李四-影石"
 node .claude/skills/pxb-liepin/scripts/lock.mjs release <岗位>    # 出完即释放,复核不碰 liepin,让账号给别的岗
 ```
-- 脚本非零退出 = 有登录页/坏 PDF:**FAIL 的别交付**;登录页先 `liepin login` 重登,再用它打印的命令续跑剩余。
+- 跑 pdf 前先 `doctor.mjs` 确认 CDP 端口上没有有头实例在跑(有就先关);pdf 本身无头,也可能触发猎聘风控。
+- 脚本非零退出 = 有登录页/风控验证页/没等到简历内容/坏 PDF:**FAIL 的别交付**;登录页先 `liepin login` 重登、风控页先 `liepin login` 在窗口里完成图形验证,再用它打印的命令续跑剩余。
 
 交付消息**只两样**:①把 `pdf.mjs` 打印的每份路径列成**可点链接**(`[姓名·标签](<岗位>/待定/简历_<标签>.pdf)`,href 用正斜杠,用户点开不必翻文件夹);②**问为什么**(合适/不合适各带理由——下一轮 JD 收敛的唯一燃料,不能只收"行/不行"):
 > 「这批 N 份出好了,直接点开看:
@@ -204,7 +205,7 @@ node .claude/skills/pxb-liepin/scripts/jd-round.mjs "<岗位>\JD.md" "R_（日�
 | `fetch.mjs` | `<id...>` | 批量拉简历窄字段(含逐段 `duty`),内置抖动;单份打不开跳过列出,账号级问题才整批停 |
 | `dedup.mjs` | `seen\|add\|set\|list\|stats <csv> [状态] [id...]` | 台账查重/改状态(5 值)/按状态列 id(回扫)/比例自查;`待定` 挂账会提醒 |
 | `jd-round.mjs` | `<JD.md> "<轮次>" "<强>" "<弱>" "<正>" "<负>"` | 往内部备注表**只追加一行**(紧贴上行、转义,免手编甩出表格) |
-| `pdf.mjs` | `--dir <目录> <id=标签...>` | 整页存 PDF;登录页/坏 PDF 非零退出并打印续跑命令 |
+| `pdf.mjs` | `--dir <目录> <id=标签...>` | 整页存 PDF;登录页/风控验证页/没等到简历内容/坏 PDF 非零退出并打印续跑命令 |
 | `patch-headless.mjs` | **已废弃,勿跑** | 旧版用来把默认翻成无头;新版 CLI 下无头会触发风控 |
 
 > liepin 命令细节见同目录 `liepin-cli` skill。环境/安装见仓库根 `README.md`。
