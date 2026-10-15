@@ -198,7 +198,7 @@ node .claude/skills/pxb-liepin/scripts/jd-round.mjs "<岗位>\JD.md" "R_（日�
 | 脚本 | 用法 | 干什么 |
 |---|---|---|
 | `init-role.mjs` | `"<岗位>"` | 新岗一键建档:复制模板三件 + 建 `待定/`、`参考简历/`;幂等只补缺 |
-| `doctor.mjs` | `[--kill]` | 开工体检:cli 版本(下限+是否最新)/锁/残留浏览器;`--kill` 顺带清残留 |
+| `doctor.mjs` | `[--kill]` | 开工体检:cli 版本(下限+是否最新)/搜索队列(缺则从模板生成)/锁/残留浏览器;`--kill` 顺带清残留 |
 | `lock.mjs` | `acquire\|renew\|release <岗位>` | 单账号搜索锁,30 分钟过期;校验岗位归属,liepin 成功调用自动续;acquire/renew 打印本轮纪律 |
 | `search.mjs` | `<csv> "<词>" [--city --limit --experience --salary --degree --age --user-status]` | 搜(JD 硬约束全传参;默认服务端排除"在职,暂无跳槽打算")+去重+登记 `未精筛`+打窄表,结尾提示三桶下一步 |
 | `fetch.mjs` | `<id...>` | 批量拉简历窄字段(含逐段 `duty`),内置抖动;单份打不开跳过列出,账号级问题才整批停 |

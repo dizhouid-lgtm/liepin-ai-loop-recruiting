@@ -2,7 +2,7 @@
 // 用法: node doctor.mjs [--kill]   --kill = 顺带杀掉残留的 liepin 浏览器进程
 // 登录态不在此查(要碰账号):由第一轮 search 当探针(见 SKILL 步骤 0.5)。
 import path from 'path';
-import { existsSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync, statSync, copyFileSync } from 'fs';
 import { execSync, spawnSync } from 'child_process';
 import { LOCK_FILE, listOrphanChrome, killOrphanChrome } from './_liepin.mjs';
 
@@ -50,6 +50,13 @@ if (dist) {
 }
 
 // 4. 有头/无头:search/fetch 默认有头(无头 UA 会被猎聘风控),仅 pdf.mjs 无头。无头补丁已废弃,勿打。
+
+// 5. 搜索队列(未跟踪的运行状态,新克隆/拉取后没有 → 从模板生成)
+const QUEUE = path.join('_共享', '搜索队列.md');
+const QUEUE_TPL = path.join('_共享', '模板', '搜索队列模板.md');
+if (existsSync(QUEUE)) ok('搜索队列在');
+else if (existsSync(QUEUE_TPL)) { copyFileSync(QUEUE_TPL, QUEUE); ok('搜索队列缺失,已从模板生成'); }
+else fail('搜索队列与模板都不在', '在工作区根目录运行 doctor');
 
 // 6. 搜索锁
 if (!existsSync(LOCK_FILE)) ok('搜索锁空闲');

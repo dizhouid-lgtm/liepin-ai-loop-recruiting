@@ -24,6 +24,8 @@
 *.pdf
 **/待定/
 .search-lock
+# 搜索队列是运行状态(每台机器各自排队),模板在 _共享/模板/,doctor 缺则自动生成
+/_共享/搜索队列.md
 .liepin-cli/
 node_modules/
 .DS_Store
