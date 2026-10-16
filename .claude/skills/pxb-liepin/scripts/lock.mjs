@@ -18,7 +18,7 @@ const lock = LOCK_FILE;
 // 每轮开工前把纪律重新打进上下文——长循环里 SKILL 正文会被压缩掉,靠这几行防漂移。
 const DISCIPLINE =
   '本轮纪律:① 先发一行心跳再继续 ② 粗筛三桶:即否→set 粗筛不合适 / 最多 6 个最对口→fetch 精筛 / 其余留未精筛 ' +
-  '③ 精筛完立刻 set 待定|精筛不合适 ④ stats 看待定,≥5 或到批次上限(3 次 search/20 份简历)→ 交复核 + release ⑤ jd-round 记本轮 ⑥ 退出码 3=风控:立刻全停、release、请用户过验证,别重跑';
+  '③ 精筛完立刻 set 待定|精筛不合适 ④ stats 看待定,≥5 或到批次上限(10 次 search/30 份简历)→ 交复核 + release ⑤ jd-round 记本轮 ⑥ 退出码 3=风控:立刻全停、release、请用户过验证,别重跑';
 
 // 锁内容格式「占锁:<岗位> <ISO时间>」,读出岗位名
 function holder() {
