@@ -46,7 +46,7 @@ const fresh = raw.filter(x => x.resume_id && !seen.has(x.resume_id));
 for (const x of fresh) rows.push({ resume_id: x.resume_id, status: '未精筛' });
 writeLedger(csv, rows);
 
-// 窄表:卡片只有这几列,判不了能力,只够砍硬约束 + 挑 ~10 进精筛
+// 窄表:卡片只有这几列,判不了能力,只够砍硬约束 + 挑最多 6 个进精筛
 console.log(`本次召回 ${raw.length}，新增 ${fresh.length}（其余已在台账,跳过）;${usNote}`);
 console.log('id\t姓名\t现职\t年龄\t公司\t年限\t期望薪资\t学历\t期望职位');
 for (const x of fresh) {
@@ -59,5 +59,5 @@ if (!fresh.length) {
   console.log(`→ 本页无新人(全在台账里):换关键词,或挖库存 node .claude/skills/pxb-liepin/scripts/dedup.mjs list "${csv}" 未精筛`);
 } else {
   console.log(`→ 下一步(三桶,别漏):卡面即否 → node .claude/skills/pxb-liepin/scripts/dedup.mjs set "${csv}" 粗筛不合适 <id...>`);
-  console.log('  ~10 个最对口 → node .claude/skills/pxb-liepin/scripts/fetch.mjs <id...>;其余不动,留「未精筛」当库存');
+  console.log('  最多 6 个最对口 → node .claude/skills/pxb-liepin/scripts/fetch.mjs <id...>;其余不动,留「未精筛」当库存');
 }

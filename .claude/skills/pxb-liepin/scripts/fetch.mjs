@@ -1,5 +1,5 @@
 // 精筛取数——跨平台(替原 PowerShell 步骤2 的 resume 循环)。
-// 一个循环拉完本页挑出的 ~10 份 = 1 个回合,别开一份判一份。每份间随机抖动防封。
+// 一个循环拉完本页挑出的(最多 6 份) = 1 个回合,别开一份判一份。每份间随机抖动防封。
 // 失败分两类:
 //   账号级(超时/反爬/未登录/连续 2 份失败)→ 整批停(非零退出),打印续跑命令;
 //   单份级(该简历已删/隐藏/无权限)→ 跳过继续,结尾列出。
@@ -50,4 +50,4 @@ for (let k = 0; k < ids.length; k++) {
 
 console.error(`本回合 ${ids.length - skipped.length}/${ids.length} 份拉完。`);
 if (skipped.length) console.error('打不开已跳过(一般直接 set 精筛不合适): ' + skipped.join(' '));
-console.error('→ 判完立刻归档:node .claude/skills/pxb-liepin/scripts/dedup.mjs set "<岗位>\\去重台账.csv" 待定|精筛不合适 <id...>;再 stats 看待定,≥5 → 出 PDF');
+console.error('→ 判完立刻归档:node .claude/skills/pxb-liepin/scripts/dedup.mjs set "<岗位>\\去重台账.csv" 待定|精筛不合适 <id...>;再 stats 看待定,≥5 或到批次上限 → 交复核(pdf.mjs 暂停使用)');
