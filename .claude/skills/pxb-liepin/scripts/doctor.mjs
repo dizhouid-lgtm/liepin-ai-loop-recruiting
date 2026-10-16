@@ -49,7 +49,7 @@ if (dist) {
   r.status === 0 ? ok('liepin 命令可用') : fail('liepin 命令跑不动(不在 PATH?)', '确认 npm 全局 bin 在 PATH,重开终端再试');
 }
 
-// 4. 有头/无头:search/fetch 强制有头(无头 UA 会被猎聘风控),仅 pdf.mjs 无头。无头补丁已废弃,勿打。
+// 4. 有头/无头:search/fetch/pdf 全部有头(无头 UA 会被猎聘风控)。无头补丁已废弃,勿打。
 //    环境里残留的 LIEPIN_HEADLESS/RECRUIT_BROWSER_HIDDEN=true 脚本已覆盖,但裸敲 liepin 会照它无头 → 提示删掉。
 for (const k of ['LIEPIN_HEADLESS', 'RECRUIT_BROWSER_HIDDEN'])
   if (/^(true|1|yes|y)$/i.test((process.env[k] || '').trim()))
@@ -80,7 +80,7 @@ if (dist) {
   else if (p.headless === null) ok('CDP 端口上无猎聘浏览器');
   else if (p.headless === false) ok('CDP 端口上是有头猎聘浏览器(可复用)');
   else if (p.closed) ok('已关闭 CDP 端口上的无头猎聘浏览器');
-  else fail('CDP 端口上有无头猎聘浏览器(pdf.mjs 残留?有头命令会复用它、以 HeadlessChrome UA 触发风控)', '重跑 doctor 加 --kill');
+  else fail('CDP 端口上有无头猎聘浏览器(旧版 pdf.mjs 残留?有头命令会复用它、以 HeadlessChrome UA 触发风控)', '重跑 doctor 加 --kill');
 }
 
 // 8. 残留 liepin 浏览器(占死 profile,后续每条命令都会卡住)

@@ -37,7 +37,7 @@ export function cliDist() {
 }
 
 // 探测 CDP 端口(默认 53471)上常驻的浏览器:CLI ≥0.2.7 端口上有实例就直接复用,不看 LIEPIN_HEADLESS,
-// 于是 pdf.mjs 残留的无头实例会被后续有头 search/fetch 接手、以 HeadlessChrome UA 碰猎聘 → 风控。
+// 于是(旧版 pdf.mjs 等)残留的无头实例会被后续有头 search/fetch 接手、以 HeadlessChrome UA 碰猎聘 → 风控。
 // 用 CLI 自己导出的 probeRemoteHeadless/closeRemoteBrowser(读 /json/version 的 UA;优雅关闭,登录态留在 profile)。
 // 两者是 async,liepinJson 是同步的,故放子进程里跑。
 // 返回 { headless: true|false|null(端口上没实例), closed: bool }。closeHeadless=true 时发现无头就关掉并等端口释放。
@@ -82,13 +82,13 @@ function fail(kind, msg, detail = '') {
 // timeoutMs:硬超时——liepin 卡住(撞反爬/滑块/未登录/Chrome 卡死)就强杀并抛错,
 //   绝不让脚本无限阻塞;强杀后自动清残留浏览器(否则占死 profile,后面每条都卡)。
 export function liepinJson(args, { open = '[', timeoutMs = 360000 } = {}) {
-  // 一律有头(只有 search/fetch 走这里;pdf.mjs 直连 CdpBrowser 不经此):liepin-cli ≥0.2.7 实测无头 UA 带
+  // 一律有头(只有 search/fetch 走这里;pdf.mjs 自己直连常驻有头浏览器,不经此):liepin-cli ≥0.2.7 实测无头 UA 带
   // HeadlessChrome 会被判"行为异常"。强制覆盖,不继承外部 LIEPIN_HEADLESS(用户级环境变量里可能残留 true)。
   const env = { ...process.env, LIEPIN_HEADLESS: 'false' };
-  // 再清掉端口上的无头实例(多半是 pdf.mjs 残留),否则 CLI 会直接复用它,上面的 false 不生效。
+  // 再清掉端口上的无头实例(多半是旧版 pdf.mjs 残留),否则 CLI 会直接复用它,上面的 false 不生效。
   const p = probeCdpPort({ closeHeadless: true });
   if (p.headless === true && !p.closed)
-    throw fail('spawn', `端口上有无头猎聘浏览器(多半是 pdf.mjs 残留),关闭失败;不能让有头命令复用它(HeadlessChrome UA 会触发风控)。\n` +
+    throw fail('spawn', `端口上有无头猎聘浏览器(多半是旧版 pdf.mjs 残留),关闭失败;不能让有头命令复用它(HeadlessChrome UA 会触发风控)。\n` +
       `处理:node .claude/skills/pxb-liepin/scripts/doctor.mjs --kill`);
   if (p.closed) console.error('已关闭端口上残留的无头猎聘浏览器(防 HeadlessChrome UA 触发风控),改由本次有头拉起。');
   // 必须带 --json:否则 liepin 走人类可读/交互模式,输出无法解析、甚至会挂起干等(卡死主因)。

@@ -50,4 +50,4 @@ for (let k = 0; k < ids.length; k++) {
 
 console.error(`本回合 ${ids.length - skipped.length}/${ids.length} 份拉完。`);
 if (skipped.length) console.error('打不开已跳过(一般直接 set 精筛不合适): ' + skipped.join(' '));
-console.error('→ 判完立刻归档:node .claude/skills/pxb-liepin/scripts/dedup.mjs set "<岗位>\\去重台账.csv" 待定|精筛不合适 <id...>;再 stats 看待定,≥5 或到批次上限 → 交复核(pdf.mjs 暂停使用)');
+console.error('→ 判完立刻归档:node .claude/skills/pxb-liepin/scripts/dedup.mjs set "<岗位>\\去重台账.csv" 待定|精筛不合适 <id...>;再 stats 看待定,≥5 或到批次上限 → 交复核(先 pdf.mjs 给待定出 PDF,再释放锁)');
